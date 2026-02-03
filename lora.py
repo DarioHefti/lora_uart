@@ -43,7 +43,9 @@ def main():
         
         # Queue some messages (sent automatically in background)
         lora.send("Hello World!")
-        lora.send({"temp": 23.5, "humidity": 65, "battery": 95})
+        
+        #for the next line to work we would need to update the TTN payload formatter
+        #lora.send({"temp": 23.5, "humidity": 65, "battery": 95})
         
         print(f"Queue size: {lora.queue_size}")
         
