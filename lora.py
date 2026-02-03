@@ -13,7 +13,7 @@ from client import TTN, TTNError, Region
 # CONFIGURATION
 # =============================================================================
 
-SERIAL_PORT = "COM3"  # Windows: COM3, COM4 | RPi: /dev/ttyAMA0
+SERIAL_PORT = "/dev/ttyS0"  # Windows: COM3, COM4 | RPi: /dev/ttyAMA0
 REGION = Region.EU868
 
 # TTN credentials (from TTN console)
