@@ -17,20 +17,31 @@ band='EU868'
 channels='0-2'
  
  
-from machine import UART, Pin
-from utime import sleep_ms
+import serial
+import time
 from sys import exit
- 
-uart1 = UART(1, baudrate=9600, tx=Pin(43), rx=Pin(44))
+
+# Configure your serial port here
+# Windows: 'COM3', 'COM4', etc.
+# Linux: '/dev/ttyUSB0', '/dev/ttyACM0', etc.
+# macOS: '/dev/tty.usbserial-xxxx', etc.
+SERIAL_PORT = 'COM3'
+BAUD_RATE = 9600
+
+uart1 = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
 join_EUI = None   # These are populated by this script
 device_EUI = None
- 
+
 ### Function Definitions
- 
+
+def sleep_ms(ms):
+    '''Sleep for milliseconds'''
+    time.sleep(ms / 1000)
+
 def receive_uart():
     '''Polls the uart until all data is dequeued'''
-    rxData=bytes()
-    while uart1.any()>0:
+    rxData = bytes()
+    while uart1.in_waiting > 0:
         rxData += uart1.read(1)
         sleep_ms(2)
     return rxData.decode('utf-8')
@@ -38,7 +49,7 @@ def receive_uart():
 def send_AT(command):
     '''Wraps the "command" string with AT+ and \r\n'''
     buffer = 'AT' + command + '\r\n'
-    uart1.write(buffer)
+    uart1.write(buffer.encode('utf-8'))
     sleep_ms(300)
  
 def test_uart_connection():
