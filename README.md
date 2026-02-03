@@ -1,99 +1,69 @@
-# ttn-lora
+# LoRa UART
 
-Simple Python package for connecting to The Things Network via LoRaWAN on Raspberry Pi.
+Simple Python scripts for connecting to The Things Network via LoRaWAN.
 
 Works with the DFRobot LoRaWAN Node Module (EU868).
 
-**Protocol verified against**: [DFRobot_LWNode Arduino Library](https://github.com/cdjq/DFRobot_LWNode)
+## Files
 
-## Installation
+- `client.py` - LoRa device interface (TTN class with all the serial/AT command logic)
+- `lora.py` - Main script to run and test
 
-```bash
-pip install ttn-lora
-```
-
-Or install from source:
+## Requirements
 
 ```bash
-cd ttn_lora
-pip install -e .
+pip install pyserial
 ```
 
 ## Quick Start
 
-```python
-from ttn_lora import TTN
+1. Edit `lora.py` and update:
+   - `SERIAL_PORT` - Your COM port (Windows) or `/dev/ttyAMA0` (RPi)
+   - `APP_EUI` - From TTN console
+   - `APP_KEY` - From TTN console
 
-ttn = TTN("/dev/ttyAMA0")
-print(f"DevEUI: {ttn.dev_eui}")  # Register this on TTN
+2. Run:
+   ```bash
+   python lora.py
+   ```
 
-ttn.join(app_eui="...", app_key="...")
-ttn.send(b"Hello!")
-```
+3. Copy the DevEUI shown and register it on TTN console
 
 ## Usage
 
-### Basic
+The `lora.py` script will:
+1. Connect to the LoRa module
+2. Show the DevEUI (register this on TTN)
+3. Join TTN using OTAA
+4. Send sensor data in a loop
+
+### Using client.py directly
 
 ```python
-from ttn_lora import TTN
+from client import TTN, TTNError, Region
 
 # Connect
-ttn = TTN("/dev/ttyAMA0")  # RPi UART
-# ttn = TTN("COM3")        # Windows
-
-# Get DevEUI for TTN registration
+ttn = TTN("COM3", region=Region.EU868, debug=True)
 print(f"DevEUI: {ttn.dev_eui}")
 
-# Join TTN (blocks until joined, up to 60s)
+# Join TTN
 ttn.join(
     app_eui="DFDFDFDF00000000",
     app_key="0102030405060708090A0B0C0D0E0F10"
 )
 
 # Send data
-ttn.send(b"\x01\x02\x03", port=1)
-ttn.send("Hello TTN!")
-ttn.send({"temp": 22.5, "humidity": 65})  # Auto-encoded
+ttn.send(b"Hello!")
+ttn.send({"temp": 22.5, "humidity": 65})
 
-# Check signal quality
+# Check signal
 print(f"RSSI: {ttn.rssi} dBm, SNR: {ttn.snr} dB")
 
-# Clean up
+# Close
 ttn.close()
 ```
 
-### Context Manager
-
-```python
-from ttn_lora import TTN
-
-with TTN("/dev/ttyAMA0") as ttn:
-    ttn.join(app_eui="...", app_key="...")
-    ttn.send({"temp": 22})
-# Auto-closes when done
-```
-
-### Sensor Loop
-
-```python
-from ttn_lora import TTN
-import time
-
-ttn = TTN("/dev/ttyAMA0")
-ttn.join(app_eui="...", app_key="...")
-
-while True:
-    # Read your sensors
-    data = {"temp": 22.5, "humidity": 65, "battery": 85}
-    
-    ttn.send(data)
-    time.sleep(300)  # Send every 5 minutes
-```
-
-## Raspberry Pi Setup
-
-### Hardware Connection
+## Hardware Setup (Raspberry Pi)
 
 | Module Pin | RPi Pin | GPIO |
 |------------|---------|------|
@@ -102,7 +72,7 @@ while True:
 | GND        | Pin 6   | GND |
 | VCC        | Pin 1   | 3.3V |
 
-### Enable UART
+### Enable UART on RPi
 
 1. Run `sudo raspi-config`
 2. Go to **Interface Options** → **Serial Port**
@@ -110,18 +80,13 @@ while True:
 4. Select **Yes** for "serial port hardware enabled"
 5. Reboot
 
-### Set DFRobot Module to UART Mode
-
-1. Set the DIP switch on the module to UART position
-2. Power cycle the module
-
 ## TTN Setup
 
 1. Go to [TTN Console](https://console.cloud.thethings.network/)
 2. Create an Application
 3. Register a Device (OTAA)
-4. Copy **AppEUI** and **AppKey**
-5. Get **DevEUI** from your device: `print(ttn.dev_eui)`
+4. Copy **AppEUI** and **AppKey** to `lora.py`
+5. Run `python lora.py` to get the **DevEUI**
 6. Enter DevEUI in TTN console
 
 ## Data Encoding
@@ -135,7 +100,7 @@ When sending a dict, values are auto-encoded:
 | `pressure` | 2 bytes, 0.1 hPa resolution |
 | `battery` | 1 byte, percentage |
 
-Example TTN decoder:
+TTN decoder example:
 
 ```javascript
 function decodeUplink(input) {
@@ -146,40 +111,6 @@ function decodeUplink(input) {
   return { data: data };
 }
 ```
-
-## API Reference
-
-### TTN(port, region, debug)
-
-Create client.
-
-- `port`: Serial port (default: `/dev/ttyAMA0`)
-- `region`: `Region.EU868`, `US915`, etc. (default: EU868)
-- `debug`: Enable debug logging (default: False)
-
-### ttn.join(app_eui, app_key, timeout, data_rate, tx_power)
-
-Join TTN via OTAA. Blocks until joined.
-
-- `app_eui`: Application EUI (16 hex chars)
-- `app_key`: Application Key (32 hex chars)
-- `timeout`: Join timeout seconds (default: 60)
-- `data_rate`: DR0-DR5 (default: 5 = SF7)
-- `tx_power`: dBm (default: 14)
-
-### ttn.send(data, port)
-
-Send data to TTN.
-
-- `data`: bytes, str, or dict
-- `port`: fPort 1-223 (default: 1)
-
-### Properties
-
-- `ttn.dev_eui`: Device EUI (str)
-- `ttn.is_joined`: Join status (bool)
-- `ttn.rssi`: Last RSSI in dBm (int)
-- `ttn.snr`: Last SNR in dB (int)
 
 ## License
 
