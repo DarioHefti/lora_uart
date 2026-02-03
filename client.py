@@ -286,11 +286,19 @@ class TTN:
         Data is sent on the default port configured in the module.
 
         Args:
-            data: Payload - bytes, string, or dict (auto-encoded)
+            data: Payload - can be:
+                - str: "hello world" -> sent as UTF-8 bytes
+                - bytes: b"\\x01\\x02" -> sent as-is
+                - dict: {"temp": 23.5} -> encoded using sensor format
             port: fPort (ignored - module uses default port)
 
         Raises:
             TTNError: If not joined or send fails
+        
+        Example:
+            ttn.send("hello world")  # Simple string
+            ttn.send(b"\\x48\\x65\\x6C\\x6C\\x6F")  # Raw bytes
+            ttn.send({"temp": 23.5, "humidity": 65})  # Sensor data
         """
         if not self._joined:
             raise TTNError("Not joined - call join() first")
@@ -320,6 +328,7 @@ class TTN:
         Encode dict to bytes using simple format.
         
         Supported keys: temp/temperature, humidity, pressure, battery
+        For arbitrary strings, use send("your string") directly instead of a dict.
         """
         result = bytearray()
 
@@ -338,11 +347,16 @@ class TTN:
                 # Battery: 1 byte, percentage
                 result.append(int(value))
             else:
-                # Generic: single byte for int, 2 bytes for float
-                if isinstance(value, int):
+                # Generic handling
+                if isinstance(value, str):
+                    # String: encode as UTF-8 bytes
+                    result.extend(value.encode())
+                elif isinstance(value, int):
                     result.append(value & 0xFF)
                 elif isinstance(value, float):
                     result.extend(int(value * 100).to_bytes(2, "big", signed=True))
+                else:
+                    logger.warning(f"Skipping unsupported value type for key '{key}': {type(value)}")
 
         return bytes(result)
 
