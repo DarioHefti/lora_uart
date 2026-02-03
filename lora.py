@@ -17,7 +17,7 @@ SERIAL_PORT = "/dev/ttyS0"  # Windows: COM3, COM4 | RPi: /dev/ttyAMA0
 REGION = Region.EU868
 
 # TTN credentials (MUST match TTN console exactly)
-APP_EUI = "0000000000000000"
+APP_EUI = "2309199300000000"
 APP_KEY = "0102030405060708090A0B0C0D0E0F10"
 
 # =============================================================================
