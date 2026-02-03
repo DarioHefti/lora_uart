@@ -232,14 +232,12 @@ class TTN:
         if not ok:
             raise TTNError("Failed to set AppKey")
 
-        # Initiate join
+        # Initiate join (command may not return OK immediately - that's normal)
         logger.info("Sending join request...")
-        ok, _ = self._send_cmd("AT+JOIN=1", timeout=10)
-        if not ok:
-            raise TTNError("Join request failed")
-
+        self._send_cmd("AT+JOIN=1", timeout=5)
+        
         # Wait for join to complete
-        logger.info("Waiting for join accept...")
+        logger.info("Waiting for join accept (this can take up to 60s)...")
         start = time.time()
         while time.time() - start < timeout:
             ok, data = self._send_cmd("AT+JOIN?")
@@ -247,7 +245,9 @@ class TTN:
                 self._joined = True
                 logger.info("Successfully joined TTN!")
                 return
-            time.sleep(2)
+            elapsed = int(time.time() - start)
+            logger.debug(f"Still waiting... ({elapsed}s)")
+            time.sleep(5)
 
         raise TTNError(f"Join timeout after {timeout}s - check gateway coverage and credentials")
 

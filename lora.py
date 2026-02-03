@@ -29,8 +29,8 @@ print(f"DevEUI: {ttn.dev_eui}")
 print(f"AppEUI: {APP_EUI}")
 
 # # Join and send example:
-# ttn.join(app_eui=APP_EUI, app_key=APP_KEY)
-# ttn.send(b"Hello World!")
-# print(f"RSSI: {ttn.rssi} dBm, SNR: {ttn.snr} dB")
+ttn.join(app_eui=APP_EUI, app_key=APP_KEY)
+ttn.send(b"Hello World!")
+print(f"RSSI: {ttn.rssi} dBm, SNR: {ttn.snr} dB")
 
 ttn.close()
