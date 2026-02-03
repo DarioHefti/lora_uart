@@ -25,7 +25,7 @@ from sys import exit
 # Windows: 'COM3', 'COM4', etc.
 # Linux: '/dev/ttyUSB0', '/dev/ttyACM0', etc.
 # macOS: '/dev/tty.usbserial-xxxx', etc.
-SERIAL_PORT = 'COM3'
+SERIAL_PORT = '/dev/ttyS0'
 BAUD_RATE = 9600
 
 uart1 = serial.Serial(
