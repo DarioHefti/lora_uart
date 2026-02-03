@@ -18,7 +18,7 @@ pip install pyserial
 ## Quick Start
 
 1. Edit `lora.py` and update:
-   - `SERIAL_PORT` - Your COM port (Windows) or `/dev/ttyAMA0` (RPi)
+   - `SERIAL_PORT` - Your serial port (e.g. `/dev/ttyAMA0` or `/dev/ttyS0`)
    - `APP_EUI` - From TTN console
    - `APP_KEY` - From TTN console
 
@@ -43,7 +43,7 @@ The `lora.py` script will:
 from client import TTN, TTNError, Region
 
 # Connect
-ttn = TTN("COM3", region=Region.EU868, debug=True)
+ttn = TTN("/dev/ttyAMA0", region=Region.EU868, debug=True)
 print(f"DevEUI: {ttn.dev_eui}")
 
 # Join TTN

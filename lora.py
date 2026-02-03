@@ -13,7 +13,7 @@ from client import TTN, TTNError, Region
 # CONFIGURATION - Update these to match TTN console!
 # =============================================================================
 
-SERIAL_PORT = "/dev/ttyS0"  # Windows: COM3, COM4 | RPi: /dev/ttyAMA0
+SERIAL_PORT = "/dev/ttyS0"  # or /dev/ttyAMA0 for hardware UART
 REGION = Region.EU868
 
 # TTN credentials (MUST match TTN console exactly)

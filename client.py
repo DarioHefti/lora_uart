@@ -39,9 +39,6 @@ class TTN:
     On Raspberry Pi:
         - Use /dev/ttyAMA0 (hardware UART) or /dev/ttyS0
         - Disable serial console in raspi-config first
-    
-    On Windows:
-        - Use COM3, COM4, etc.
     """
 
     def __init__(
@@ -54,7 +51,7 @@ class TTN:
         Initialize TTN client.
 
         Args:
-            port: Serial port (RPi: /dev/ttyAMA0, Windows: COM3)
+            port: Serial port (e.g. /dev/ttyAMA0 or /dev/ttyS0)
             region: LoRaWAN region (default: EU868)
             debug: Enable debug logging
         """
@@ -184,7 +181,7 @@ class TTN:
         app_eui: str,
         app_key: str,
         timeout: int = 60,
-        data_rate: int = 5,
+        data_rate: int = 3,
         tx_power: int = 14,
     ) -> None:
         """
@@ -194,7 +191,7 @@ class TTN:
             app_eui: Application EUI / JoinEUI from TTN (16 hex chars)
             app_key: Application Key from TTN (32 hex chars)
             timeout: Join timeout in seconds (default: 60)
-            data_rate: Data rate 0-5 (default: 5 = SF7)
+            data_rate: Data rate 0-5 (default: 3 = SF9, use 0 for max range)
             tx_power: TX power in dBm (default: 14)
 
         Raises:
@@ -322,6 +319,11 @@ class TTN:
             raise TTNError("Send failed")
 
         logger.info(f"Sent {len(payload)} bytes to TTN")
+        
+        # Wait for transmission to complete (TX + RX1 + RX2 windows)
+        # Class A: RX1 at 1s, RX2 at 2s after TX end
+        # Total ~3-4 seconds depending on payload size and data rate
+        time.sleep(3)
 
     def _encode_dict(self, data: dict) -> bytes:
         """
