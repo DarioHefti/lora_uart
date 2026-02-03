@@ -28,7 +28,14 @@ from sys import exit
 SERIAL_PORT = 'COM3'
 BAUD_RATE = 9600
 
-uart1 = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
+uart1 = serial.Serial(
+            port=SERIAL_PORT,
+            baudrate=9600,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            timeout=5,
+        )
 join_EUI = None   # These are populated by this script
 device_EUI = None
 
