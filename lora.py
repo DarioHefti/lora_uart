@@ -25,12 +25,18 @@ APP_KEY = "0102030405060708090A0B0C0D0E0F10"
 print("Connecting to LoRa module...")
 ttn = TTN(SERIAL_PORT, region=REGION, debug=True)
 
-print(f"DevEUI: {ttn.dev_eui}")
+print(f"\nDevEUI: {ttn.dev_eui}")
 print(f"AppEUI: {APP_EUI}")
 
+# Query module info
+print("\n--- Module Info ---")
+for cmd in ["AT+VER?", "AT+LORAWAN?", "AT+REGION?"]:
+    ok, data = ttn.send_at(cmd)
+    print(f"{cmd} -> {data}")
+
 # # Join and send example:
-ttn.join(app_eui=APP_EUI, app_key=APP_KEY)
-ttn.send(b"Hello World!")
-print(f"RSSI: {ttn.rssi} dBm, SNR: {ttn.snr} dB")
+# ttn.join(app_eui=APP_EUI, app_key=APP_KEY)
+# ttn.send(b"Hello World!")
+# print(f"RSSI: {ttn.rssi} dBm, SNR: {ttn.snr} dB")
 
 ttn.close()
