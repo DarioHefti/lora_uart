@@ -89,11 +89,16 @@ class TTN:
 
         logger.info(f"Connected to LoRaWAN module on {port}")
 
-    def _send_cmd(self, cmd: str, timeout: float = 3) -> tuple[bool, str]:
+    def _send_cmd(self, cmd: str, timeout: float = 3, delay: float = 0.8) -> tuple[bool, str]:
         """
         Send AT command and get response.
         
         Response format from module: +CMD=OK\r\n or +CMD=value\r\n
+        
+        Args:
+            cmd: AT command to send
+            timeout: Max time to wait for response
+            delay: Initial delay before reading (C++ library uses 800ms)
         """
         # Clear buffer
         self._serial.reset_input_buffer()
@@ -106,8 +111,9 @@ class TTN:
         self._serial.write(full_cmd.encode())
         self._serial.flush()
 
-        # Wait for response
-        time.sleep(0.1)
+        # Wait for module to process command (C++ library uses 800ms delay)
+        time.sleep(delay)
+        
         end_time = time.time() + timeout
         response = b""
 
@@ -160,8 +166,18 @@ class TTN:
 
     @property
     def is_joined(self) -> bool:
-        """Check if joined to TTN."""
-        return self._joined
+        """
+        Check if joined to TTN.
+        
+        Queries the module directly (AT+JOIN?) rather than using cached state.
+        C++ library: isJoined() expects +JOIN=1\r\n when joined.
+        """
+        ok, data = self._send_cmd("AT+JOIN?")
+        if ok and data == "1":
+            self._joined = True
+            return True
+        self._joined = False
+        return False
 
     def join(
         self,
@@ -223,21 +239,29 @@ class TTN:
         self._send_cmd("AT+UPLINKTYPE=UNCONFIRMED")
 
         # Set JoinEUI (AppEUI in TTN v2 terminology)
+        # C++ library: setAppEUI sends AT+JOINEUI=<appeui>, expects +JOINEUI=OK\r\n
         ok, _ = self._send_cmd(f"AT+JOINEUI={app_eui.upper()}")
         if not ok:
             raise TTNError("Failed to set JoinEUI/AppEUI")
 
         # Set AppKey
+        # C++ library: setAppKEY sends AT+APPKEY=<appkey>, expects +APPKEY=OK\r\n
         ok, _ = self._send_cmd(f"AT+APPKEY={app_key.upper()}")
         if not ok:
             raise TTNError("Failed to set AppKey")
 
-        # Initiate join (command may not return OK immediately - that's normal)
+        # Initiate join request
+        # C++ library: join() sends AT+JOIN=1, expects +JOIN=OK\r\n
         logger.info("Sending join request...")
-        self._send_cmd("AT+JOIN=1", timeout=5)
+        ok, _ = self._send_cmd("AT+JOIN=1", timeout=5)
+        if not ok:
+            raise TTNError("Join request failed - module did not accept join command")
+        
+        logger.info("Join request accepted, waiting for join accept from network...")
         
         # Wait for join to complete
-        logger.info("Waiting for join accept (this can take up to 60s)...")
+        # C++ library: isJoined() sends AT+JOIN?, expects +JOIN=1\r\n when joined
+        logger.info(f"Waiting for join accept (this can take up to {timeout}s)...")
         start = time.time()
         while time.time() - start < timeout:
             ok, data = self._send_cmd("AT+JOIN?")
@@ -245,8 +269,11 @@ class TTN:
                 self._joined = True
                 logger.info("Successfully joined TTN!")
                 return
+            elif ok and data == "0":
+                # Join in progress or not joined yet
+                pass
             elapsed = int(time.time() - start)
-            logger.debug(f"Still waiting... ({elapsed}s)")
+            logger.debug(f"Still waiting... ({elapsed}s) - join status: {data}")
             time.sleep(5)
 
         raise TTNError(f"Join timeout after {timeout}s - check gateway coverage and credentials")
